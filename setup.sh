@@ -1,3 +1,4 @@
+# https://piotrminkowski.com/2021/12/03/create-kubernetes-clusters-with-cluster-api-and-argocd/
 # Create the management cluster
 kind create cluster --config mgmt-cluster-config.yaml --name mgmt
 
@@ -8,7 +9,7 @@ clusterctl init --infrastructure docker
 kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 # Copy the admin password secret
-kubectl get secrets/argocd-initial-admin-secret --template={{.data.password}} | base64 -D | pbcopy
+kubectl get secrets/argocd-initial-admin-secret --context kind-mgmt --template={{.data.password}} | base64 -D | pbcopy
 
 kubectl port-forward svc/argocd-server 8080:80
 
@@ -25,3 +26,16 @@ clusterctl generate cluster c1 --flavor development \
 
 # Delete c1-clusterapi.yaml, we'll use Helm charts in mgmt/ instead
 rm c1-clusterapi.yaml
+
+kubectl apply -f argo-cluster-role.yaml
+kubectl apply -f argoapp-c1-cluster-create.yaml
+kubectl apply -f argoapp-c2-cluster-create.yaml
+
+kind export kubeconfig --name c1
+
+sed -i '' 's/0.0.0.0:/127.0.0.1:/' ~/.kube/config
+
+kubectl apply -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml --context kind-c1
+
+
+argocd login localhost:8080
