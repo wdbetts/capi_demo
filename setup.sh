@@ -17,6 +17,7 @@ kubectl port-forward svc/argocd-server 8080:80
 https://localhost:8080/
 
 # Create a workload cluster manifest
+# Just to look at the structure
 clusterctl generate cluster c1 --flavor development \
   --infrastructure docker \
   --kubernetes-version v1.21.1 \
@@ -32,10 +33,11 @@ kubectl apply -f argoapp-c1-cluster-create.yaml
 kubectl apply -f argoapp-c2-cluster-create.yaml
 
 kind export kubeconfig --name c1
-
 sed -i '' 's/0.0.0.0:/127.0.0.1:/' ~/.kube/config
 
 kubectl apply -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml --context kind-c1
 
+kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
+kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
 
 argocd login localhost:8080
